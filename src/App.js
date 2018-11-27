@@ -73,15 +73,12 @@ class App extends Component {
     }
     let redirectUrl = new URL(this.state.identityServerUrl + '/connect/authorize');
     redirectUrl.searchParams.append('client_id', this.state.clientId);
-    // redirectUrl.searchParams.append('client_secret', this.state.clientSecret);
     redirectUrl.searchParams.append('response_type', 'code');
     redirectUrl.searchParams.append('redirect_uri', this.state.redirectUrl);
     redirectUrl.searchParams.append('scope', this.state.scopes);
 
     this.saveCredentials();
 
-    // let redirect = this.state.identityServerUrl + '/connect/authorize?client_id=' + this.state.clientId + '&client_secret=' + this.state.clientSecret + '&redirect_uri=' + this.state.redirectUrl + '&scope=' + this.state.scopes + "&response_type=code";
-    //console.log(redirectUrl.href);
     window.location.href = redirectUrl.href;
   }
 
