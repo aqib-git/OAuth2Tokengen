@@ -1,3 +1,7 @@
+body {
+  overflow: scroll;
+}
+
 .App {
   text-align: center;
 }
@@ -48,8 +52,6 @@
 .App-navbar > li a.active {
   color: #333333;
   background: white;
-  box-shadow: 0 8px 5px lightgrey;
-  transition: 0.5s all ease-in-out;
 }
 
 .container {
