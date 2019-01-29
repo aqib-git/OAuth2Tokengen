@@ -21,6 +21,12 @@ class Home extends Component {
     'readwrite:core'
   ];
 
+  scopeDependency = {
+    email: ['openid'],
+    address: ['openid'],
+    profile: ['openid']
+  }
+
   appTypes = [
     {
       id: 'ssa',
@@ -97,7 +103,16 @@ class Home extends Component {
   }
 
   addScope = (scope) => {
-    this.setState({scopes: this.state.scopes.trim() + ' ' + scope})
+    if (this.state.scopes.search(scope) >= 0) {
+      return
+    }
+    this.setState({scopes: this.state.scopes.trim() + ' ' + scope}, () => {
+      if (this.scopeDependency[scope]) {
+        for(let s of this.scopeDependency[scope]) {
+          this.addScope(s)
+        }   
+      }
+    }) 
   }
 
   fetchAcessToken() {
