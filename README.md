@@ -1,1 +1,3 @@
-# Generate Access Token and Refresh token.
+# Tokegen
+
+Generate Access Token and Refresh token for different grant types.
