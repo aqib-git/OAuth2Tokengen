@@ -55,3 +55,16 @@ code {
 #errorSnackbar > div {
     max-width: 100% !important;
 }
+
+.scopes {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.scopes > label {
+    min-width: 23%;
+}
+
+.scopes-input > div {
+    width: 100%;
+}

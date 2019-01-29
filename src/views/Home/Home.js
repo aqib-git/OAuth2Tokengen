@@ -8,6 +8,7 @@ import axios from 'axios';
 import SnackNotification from './../../components/SnackNotification';
 import Snackbar from '@material-ui/core/Snackbar';
 import Checkbox from '@material-ui/core/Checkbox';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 
 class Home extends Component {
   scopes = [
@@ -46,6 +47,15 @@ class Home extends Component {
     this.setState({
       [name]: event.target.value,
     });
+  };
+
+  handleScopeChange = name => event => {
+    let scopes = this.state.scopes
+    if(scopes.search(event.target.value) >= 0) {
+      this.setState({scopes: scopes.replace(event.target.value, '')})
+    } else {
+      this.setState({scopes: scopes.trim() + ' ' + event.target.value})
+    }
   };
 
   fetchAcessToken() {
@@ -145,7 +155,6 @@ class Home extends Component {
   }
 
   render() {
-    console.log(this.state)
     if(this.state.toTokensView) {
       return <Redirect to="/tokens"></Redirect>
     }
@@ -183,17 +192,6 @@ class Home extends Component {
             </div>
             <div>
               <TextField
-                id="scopes"
-                label="Scopes"
-                value={this.state.scopes}
-                onChange={this.handleChange('scopes')}
-                margin="normal"
-                variant="outlined"
-                type="url"
-              />
-            </div>
-            <div>
-              <TextField
                 id="client-id"
                 label="Client Id"
                 value={this.state.clientId}
@@ -213,6 +211,33 @@ class Home extends Component {
                 variant="outlined"
                 type="text"
               />
+            </div>
+            <div>
+              <div className="scopes-input">
+                <TextField
+                  id="scopes"
+                  label="Scopes"
+                  value={this.state.scopes}
+                  onChange={this.handleChange('scopes')}
+                  margin="normal"
+                  variant="outlined"
+                  type="url"
+                />
+              </div>
+              <div className="scopes">
+                {this.scopes.map((scope) => <FormControlLabel
+                    control={<Checkbox
+                        checked={this.state.scopes.search(scope) >= 0}
+                        onChange={this.handleScopeChange('scopes')}
+                        value={scope}
+                        color="primary"
+                      />
+                    }
+                    label={scope}
+                    key={scope}
+                  />
+                )}
+              </div>
             </div>
             <div>
               <Snackbar
