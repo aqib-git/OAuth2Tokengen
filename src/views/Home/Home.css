@@ -35,11 +35,12 @@
     margin: auto;
 }
 
-#token-generator-form > div {
+#token-generator-form > div,
+#token-generator-form > div > div {
     width: 100%;
 }
 
-#token-generator-form > button {
+#token-generator-form .submit-wrapper >  button {
     width: 100%;
 }
 

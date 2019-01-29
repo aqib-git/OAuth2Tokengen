@@ -49,3 +49,8 @@
   color: #333333;
   background: white;
 }
+
+.container {
+  max-width: 1170px;
+  margin: 30px auto;
+}
