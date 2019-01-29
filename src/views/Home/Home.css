@@ -1,0 +1,56 @@
+.Home-link {
+    color: #61dafb;
+}
+
+.Home-form-section {
+    padding: 50px 0;
+}
+
+.Home-access-token-section {
+    padding: 50px 0;
+}
+
+.Home-access-token {
+    max-width: 600px;
+    margin: auto;
+}
+
+.Home-access-token > div {
+    width: 100%;
+}
+
+.Home-refresh-token {
+    max-width: 600px;
+    margin: auto;
+}
+
+.Home-refresh-token > div {
+    width: 100%;
+}
+
+#token-generator-form {
+    max-width: 600px;
+    display: flex;
+    flex-wrap: wrap;
+    margin: auto;
+}
+
+#token-generator-form > div {
+    width: 100%;
+}
+
+#token-generator-form > button {
+    width: 100%;
+}
+
+code {
+    max-width: 600px;
+    display: block;
+    word-break: break-all;
+    margin: auto;
+    border: 3px dashed grey;
+}
+
+#errorSnackbar > div {
+    max-width: 100% !important;
+}

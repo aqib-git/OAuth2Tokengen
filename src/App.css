@@ -3,7 +3,6 @@
 }
 
 .App-logo {
-  animation: App-logo-spin infinite 20s linear;
   height: 40vmin;
 }
 
@@ -13,72 +12,40 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+  font-size: 20px;
   color: white;
+  box-sizing: border-box;
 }
 
 .App-link {
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.App-form-section {
-  padding: 50px 0;
-}
-
-.App-access-token-section {
-  padding: 50px 0;
-}
-
-.App-access-token {
-  max-width: 600px;
-  margin: auto;
-}
-
-.App-access-token > div {
-  width: 100%;
-}
-
-.App-refresh-token {
-  max-width: 600px;
-  margin: auto;
-}
-
-.App-refresh-token > div {
-  width: 100%;
-}
-
-#token-generator-form {
-  max-width: 600px;
+.App-navbar {
   display: flex;
-  flex-wrap: wrap;
-  margin: auto;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  list-style-type: none;
 }
 
-#token-generator-form > div {
-  width: 100%;
+.App-navbar > li {
+  margin: 0 5px;
 }
 
-#token-generator-form > button {
-  width: 100%;
-}
-
-code {
-  max-width: 600px;
+.App-navbar > li a {
+  padding: 10px 15px;
+  color: white;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  border: 2px solid white;
+  text-decoration: none;
   display: block;
-  word-break: break-all;
-  margin: auto;
-  border: 3px dashed grey;
+  font-size: 16px;
+  border-bottom: 0;
 }
 
-#errorSnackbar > div {
-  max-width: 100% !important;
+.App-navbar > li a.active {
+  color: #333333;
+  background: white;
 }
