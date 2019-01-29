@@ -88,3 +88,11 @@ code {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
+
+
+.Home-access-token-err-msg {
+    border: 2px solid red;
+    padding: 10px;
+    border-radius: 5px;
+    width: 100%;
+}

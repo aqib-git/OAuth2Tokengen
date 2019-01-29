@@ -116,7 +116,6 @@ class Home extends Component {
   }
 
   fetchAcessToken() {
-    console.log(this.state)
     if (!this.state.code) {
       return
     }
@@ -145,7 +144,8 @@ class Home extends Component {
     })
     .catch((error) => {
       this.setState({
-        accessTokenErrMsg: error.error
+        accessTokenErrMsg: error.response.data.error,
+        code: ''
       })
     });
   }
@@ -239,13 +239,32 @@ class Home extends Component {
     this.setState(credentials)
   }
 
+  handleCloseSnackbar = () => {
+    this.setState({
+      accessTokenErrMsg: ''
+    })
+  }
+
   render() {
     if(this.state.toTokensView) {
       return <Redirect to="/tokens"></Redirect>
     }
 
     return (
-      <div className="Home">
+      <div className="Home container">
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'center',
+          }}
+          open={this.state.accessTokenErrMsg.length > 0}
+          onClose={() => this.handleCloseSnackbar()}
+        >
+          <SnackNotification
+            variant="error"
+            message={ this.state.accessTokenErrMsg }
+          />
+        </Snackbar>
         { !this.state.code &&
         <section className="Home-form-section">
           <form id="token-generator-form" noValidate autoComplete="off">
@@ -371,44 +390,11 @@ class Home extends Component {
         {
           this.state.code && 
           <section className="Home-access-token-section">
-            { !this.state.accessToken  &&
+            { !this.state.accessToken && !this.state.accessTokenErrMsg &&
               <div className="Home-access-token-fetch">
                 <CircularProgress />
                 <p style={{ textAlign: 'center' }}> Fetching access token... </p>
               </div> 
-            }
-            { this.state.accessToken &&
-              <div className="Home-access-token">
-                <TextField
-                  label="Access Token"
-                  multiline={ true }
-                  value={this.state.accessToken}
-                  margin="normal"
-                  variant="outlined"
-                  id="access-token"
-                />
-              </div>
-            }
-            { this.state.accessTokenErrMsg &&
-              <div className="Home-access-token-err-msg">
-                <p style={{ color: 'red'}}>{ this.state.accessToken }</p>
-              </div>
-            }
-          </section>
-        }
-        {
-          <section className="Home-refresh-token-section">
-            { this.state.refreshToken &&
-              <div className="Home-refresh-token">
-                <TextField
-                  label="Refresh Token"
-                  multiline={ true }
-                  value={this.state.refreshToken}
-                  margin="normal"
-                  variant="outlined"
-                  id="refresh-token"
-                />
-              </div>
             }
           </section>
         }
