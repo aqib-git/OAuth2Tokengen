@@ -21,8 +21,26 @@ class Home extends Component {
     'readwrite:core'
   ];
 
+  appTypes = [
+    {
+      id: 'ssa',
+      label: 'Server Side Application',
+      value: 'server_side',
+      grant_type: 'authorization_code',
+      response_type: 'code'
+    },
+    {
+      id: 'spa',
+      label: 'Single Page Application',
+      value: 'single_page',
+      grant_type: 'authorization_code',
+      response_type: 'code'
+    }
+  ]
+
   state = {
     toTokensView: false,
+    appType: 'server_side',
     identityServerUrl: '',
     redirectUrl: window.location.href,
     clientId: '',
@@ -44,27 +62,52 @@ class Home extends Component {
   }
 
   handleChange = name => event => {
+    const appType = this.state.appType
     this.setState({
       [name]: event.target.value,
+    }, () => {
+      if (appType === this.state.appType) {
+        return
+      }
+      let credentials = {
+        clientId: localStorage.getItem('oauth2_ssa_client_id') || '',
+        clientSecret: localStorage.getItem('oauth2_ssa_client_secret') || ''
+      }
+      if (this.state.appType === 'single_page') {
+        this.removeScope('offline_access')
+        credentials = {
+          clientId: localStorage.getItem('oauth2_spa_client_id') || '',
+          clientSecret: localStorage.getItem('oauth2_spa_client_secret') || ''
+        }
+      }
+      this.setState(credentials)
     });
   };
 
   handleScopeChange = name => event => {
-    let scopes = this.state.scopes
-    if(scopes.search(event.target.value) >= 0) {
-      this.setState({scopes: scopes.replace(event.target.value, '')})
+    if(this.state.scopes.search(event.target.value) >= 0) {
+      this.removeScope(event.target.value)
     } else {
-      this.setState({scopes: scopes.trim() + ' ' + event.target.value})
+      this.addScope(event.target.value)
     }
   };
 
+  removeScope = (scope) => {
+    this.setState({scopes: this.state.scopes.replace(scope, '')})
+  }
+
+  addScope = (scope) => {
+    this.setState({scopes: this.state.scopes.trim() + ' ' + scope})
+  }
+
   fetchAcessToken() {
+    console.log(this.state)
     if (!this.state.code) {
       return
     }
     let params = new URLSearchParams();
     params.append('code', this.state.code);
-    params.append('grant_type', 'authorization_code')
+    params.append('grant_type', this.appType().grant_type)
     params.append('redirect_uri', this.state.redirectUrl)
     params.append('client_id', this.state.clientId)
     params.append('client_secret', this.state.clientSecret)
@@ -99,8 +142,21 @@ class Home extends Component {
     } else {
       tokens = []
     }
-    tokens.push({data: data, type: 'authorization', timestamp: (new Date()).getTime()})
+    tokens.push({data: data, type: this.state.appType, timestamp: (new Date()).getTime()})
     localStorage.setItem('tokens', JSON.stringify(tokens))
+  }
+
+  appType = () => {
+    return this.appTypes.filter((app) => app.value === this.state.appType)[0] || null
+  }
+
+  appScopes = () => {
+    return this.scopes.filter((scope) => {
+      if (this.state.appType === 'single_page') {
+        return scope !== 'offline_access'
+      }
+      return true
+    })
   }
 
   redirectToIdentityServer = () => {
@@ -109,7 +165,7 @@ class Home extends Component {
     }
     let redirectUrl = new URL(this.state.identityServerUrl + '/connect/authorize');
     redirectUrl.searchParams.append('client_id', this.state.clientId);
-    redirectUrl.searchParams.append('response_type', 'code');
+    redirectUrl.searchParams.append('response_type', this.appType().response_type);
     redirectUrl.searchParams.append('redirect_uri', this.state.redirectUrl);
     redirectUrl.searchParams.append('scope', this.state.scopes);
 
@@ -139,19 +195,33 @@ class Home extends Component {
   saveCredentials = () => {
     localStorage.setItem('oauth2_identity_server_url', this.state.identityServerUrl);
     localStorage.setItem('oauth2_redirect_uri', this.state.redirectUrl);
-    localStorage.setItem('oauth2_client_id', this.state.clientId);
-    localStorage.setItem('oauth2_client_secret', this.state.clientSecret);
+    if (this.state.appType === 'server_side') {
+      localStorage.setItem('oauth2_ssa_client_id', this.state.clientId);
+      localStorage.setItem('oauth2_ssa_client_secret', this.state.clientSecret);
+    } else {
+      localStorage.setItem('oauth2_spa_client_id', this.state.clientId);
+      localStorage.setItem('oauth2_spa_client_secret', this.state.clientSecret);
+    }
     localStorage.setItem('oauth2_scopes', this.state.scopes);
+    localStorage.setItem('oauth2_app_type', this.state.appType)
   }
 
   loadCredentials = () => {
-    this.setState({
+    let credentials = {
+      appType: localStorage.getItem('oauth2_app_type') || 'server_side',
       identityServerUrl: localStorage.getItem('oauth2_identity_server_url') || '',
-      clientId: localStorage.getItem('oauth2_client_id') || '',
-      clientSecret: localStorage.getItem('oauth2_client_secret') || '',
       scopes: localStorage.getItem('oauth2_scopes') || '',
       redirectUrl: localStorage.getItem('oauth2_redirect_uri') || window.location.href
-    });
+    };
+
+    if (credentials.appType === 'server_side') {
+      credentials.clientId = localStorage.getItem('oauth2_ssa_client_id') || ''
+      credentials.clientSecret = localStorage.getItem('oauth2_ssa_client_secret') || ''
+    } else {
+      credentials.clientId = localStorage.getItem('oauth2_spa_client_id') || ''
+      credentials.clientSecret = localStorage.getItem('oauth2_spa_client_secret') || ''
+    }
+    this.setState(credentials)
   }
 
   render() {
@@ -164,6 +234,26 @@ class Home extends Component {
         { !this.state.code &&
         <section className="Home-form-section">
           <form id="token-generator-form" noValidate autoComplete="off">
+            <div>
+              <TextField
+                id="outlined-select-currency-native"
+                select
+                label="Application Type"
+                value={this.state.appType}
+                onChange={this.handleChange('appType')}
+                SelectProps={{
+                  native: true
+                }}
+                margin="normal"
+                variant="outlined"
+              >
+                {this.appTypes.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </TextField>
+            </div>
             <div>
               <TextField
                 id="identity-server-url"
@@ -225,7 +315,7 @@ class Home extends Component {
                 />
               </div>
               <div className="scopes">
-                {this.scopes.map((scope) => <FormControlLabel
+                {this.appScopes().map((scope) => <FormControlLabel
                     control={<Checkbox
                         checked={this.state.scopes.search(scope) >= 0}
                         onChange={this.handleScopeChange('scopes')}
