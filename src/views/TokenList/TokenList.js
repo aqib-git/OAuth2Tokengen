@@ -122,7 +122,7 @@ class TokenList extends Component {
     let params = new URLSearchParams();
     params.append('grant_type', 'refresh_token')
     params.append('refresh_token', token.data.refresh_token)
-    params.append('client_id', clientId + 'a')
+    params.append('client_id', clientId)
     params.append('client_secret', clientSecret)
     axios.post(this.state.identityServerUrl + '/connect/token', params, {
       headers: {

@@ -16,12 +16,10 @@ class App extends Component {
             <ul className="App-navbar">
               <li><NavLink exact to="/">New Token</NavLink></li>
               <li><NavLink to="/tokens">Tokens</NavLink></li>
-              <li><NavLink to="/api">API Request</NavLink></li>
             </ul>
           </header>
           <Route exact path="/" component={Home} />
           <Route path="/tokens" component={TokenList} />
-          <Route path="/api" component={ApiRequest} />
         </div>
       </Router>
     );
