@@ -62,13 +62,18 @@ class TokenList extends Component {
     return (new Date(timestamp)).toLocaleString()
   }
 
-  expiresAt = (createdAtTimestamp, expiresIn) => {
-    let expireTimestamp = parseInt(createdAtTimestamp) + parseInt(expiresIn) * 1000
+  expiresAt = (token) => {
+    let expireTimestamp = parseInt(token.timestamp) + parseInt(token.data.expires_in) * 1000
+    return (new Date(expireTimestamp)).toLocaleString()
+  }
+
+  isTokenExpired = (token) => {
+    let expireTimestamp = parseInt(token.timestamp) + parseInt(token.data.expires_in) * 1000
     let nowTimestamp = (new Date()).getTime()
     if (nowTimestamp >= expireTimestamp) {
-      return 'EXPIRED'
+      return true
     }
-    return (new Date(expireTimestamp)).toLocaleString()
+    return false
   }
 
   handleClickOpen = () => {
@@ -158,6 +163,13 @@ class TokenList extends Component {
     })
   }
 
+  tokenStatus = (token) => {
+    if (this.isTokenExpired(token)) {
+      return 'EXPIRED'
+    }
+    return 'ACTIVE'
+  }
+
   render() {
     return (
       <div className="container">
@@ -181,6 +193,7 @@ class TokenList extends Component {
               <TableRow>
                 <CustomTableCell>#</CustomTableCell>
                 <CustomTableCell>Type</CustomTableCell>
+                <CustomTableCell>Status</CustomTableCell>
                 <CustomTableCell>Generated At</CustomTableCell>
                 <CustomTableCell>Expires At</CustomTableCell>
                 <CustomTableCell>Token</CustomTableCell>
@@ -196,8 +209,9 @@ class TokenList extends Component {
                   <CustomTableCell component="th" scope="row">
                     <Chip label={token.type} color={token.type === 'single_page' ? 'primary' : 'secondary'}/>
                   </CustomTableCell>
+                  <CustomTableCell>{ this.tokenStatus(token) }</CustomTableCell>
                   <CustomTableCell>{ this.timestampFormatted(token.timestamp) }</CustomTableCell>
-                  <CustomTableCell>{ this.expiresAt(token.timestamp, token.data.expires_in) }</CustomTableCell>
+                  <CustomTableCell>{ this.expiresAt(token) }</CustomTableCell>
                   <CustomTableCell>
                     <Button size="small" variant="contained" onClick={() => this.setCurrentToken(token)}>
                       VIEW
@@ -207,7 +221,7 @@ class TokenList extends Component {
                     <Button title="delete" size="small" variant="contained" color="secondary" onClick={() => this.deleteToken(index)}>
                       Trash
                     </Button> &nbsp;&nbsp;
-                    {token.data.refresh_token && <Button disabled={this.state.refreshingToken} title="delete" size="small" variant="contained" onClick={() => this.refreshAccessToken(index)}>
+                    {token.data.refresh_token &&  !this.isTokenExpired(token) && <Button disabled={this.state.refreshingToken} title="delete" size="small" variant="contained" onClick={() => this.refreshAccessToken(index)}>
                       Refresh Access Token
                     </Button>}
                   </CustomTableCell>

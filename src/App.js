@@ -3,7 +3,6 @@ import './App.css';
 import { BrowserRouter as Router, Route, NavLink} from "react-router-dom";
 import Home from './views/Home/Home';
 import TokenList from './views/TokenList/TokenList';
-import ApiRequest from './views/ApiRequest/ApiRequest';
 
 class App extends Component {
 
