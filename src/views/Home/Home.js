@@ -195,7 +195,7 @@ class Home extends Component {
     if (!this.state.clientId) {
       errors.push('Client Id is required')
     }
-    if (!this.state.clientSecret) {
+    if (!this.state.clientSecret && this.state.appType === 'server_side') {
       errors.push('Client Secret is required')
     }
     if (!this.state.scopes) {
@@ -354,7 +354,7 @@ class Home extends Component {
                         checked={this.state.scopes.search(scope) >= 0}
                         onChange={this.handleScopeChange('scopes')}
                         value={scope}
-                        color="primary"
+                        color="secondary"
                       />
                     }
                     label={scope}

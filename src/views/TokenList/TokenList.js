@@ -48,7 +48,8 @@ class TokenList extends Component {
     tokens: [],
     accessTokenErrMsg: '',
     identityServerUrl: '',
-    refreshingToken: false
+    refreshingToken: false,
+    revokingToken: false
   };
 
   componentDidMount() {
@@ -164,16 +165,62 @@ class TokenList extends Component {
   }
 
   tokenStatus = (token) => {
+    if(token.access_token_revoked) {
+      return 'REVOKED'
+    }
     if (this.isTokenExpired(token)) {
       return 'EXPIRED'
     }
     return 'ACTIVE'
   }
 
+  revokeAccessToken = (index) => {
+    let tokens = [...this.state.tokens]
+    let token = tokens[index]
+    
+    let clientId = localStorage.getItem('oauth2_ssa_client_id') || ''
+    let clientSecret = localStorage.getItem('oauth2_ssa_client_secret') || ''
+
+    if (!clientId || !clientSecret) {
+      this.setState({
+        accessTokenErrMsg: 'unable to refresh token because client id and client secret is empty.'
+      })
+      return
+    }
+
+    this.setState({
+      revokingToken: true
+    })
+    let params = new URLSearchParams();
+    params.append('token', token.data.access_token)
+    params.append('client_id', clientId)
+    params.append('client_secret', clientSecret)
+    axios.post(this.state.identityServerUrl + '/connect/revocation', params, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    })
+    .then((response) => {
+      token.access_token_revoked = true
+      this.setState({
+        revokingToken: false,
+        tokens: tokens
+      })
+      localStorage.setItem('tokens', JSON.stringify(tokens.reverse()))
+    })
+    .catch((error) => {
+      this.setState({
+        revokingToken: false,
+        accessTokenErrMsg: error.response.data.error
+      })
+    });
+  }
+
   render() {
     return (
       <div className="container">
         {this.state.refreshingToken && <div><p style={{ textAlign: 'center' }}>Refreshing Token...</p> <LinearProgress /></div>}
+        {this.state.revokingToken && <div><p style={{ textAlign: 'center' }}>Revoking Token...</p> <LinearProgress /></div>}
         <Snackbar
           anchorOrigin={{
             vertical: 'bottom',
@@ -218,12 +265,38 @@ class TokenList extends Component {
                     </Button>
                   </CustomTableCell>
                   <CustomTableCell>
-                    <Button title="delete" size="small" variant="contained" color="secondary" onClick={() => this.deleteToken(index)}>
-                      Trash
-                    </Button> &nbsp;&nbsp;
-                    {token.data.refresh_token &&  !this.isTokenExpired(token) && <Button disabled={this.state.refreshingToken} title="delete" size="small" variant="contained" onClick={() => this.refreshAccessToken(index)}>
-                      Refresh Access Token
-                    </Button>}
+                    <Button 
+                      title="delete" 
+                      size="small" 
+                      variant="contained" 
+                      color="secondary" 
+                      onClick={() => this.deleteToken(index)}>
+                        Trash
+                    </Button> &nbsp;
+                    { token.data.refresh_token && 
+                      !token.access_token_revoked &&
+                      !this.isTokenExpired(token) && 
+                      <Button 
+                        disabled={this.state.refreshingToken}
+                        title="delete"
+                        size="small"
+                        variant="contained"
+                        onClick={() => this.refreshAccessToken(index)}>
+                          Refresh 
+                      </Button>
+                    } &nbsp;
+                    { token.type === 'server_side' &&
+                      !token.access_token_revoked && 
+                      !this.isTokenExpired(token) &&
+                       <Button 
+                        disabled={this.state.revokingToken} 
+                        title="delete" 
+                        size="small" 
+                        variant="contained" 
+                        onClick={() => this.revokeAccessToken(index)}>
+                         Revoke
+                      </Button>
+                    }
                   </CustomTableCell>
                 </TableRow>
               ))}
