@@ -8,7 +8,7 @@ class App extends Component {
 
   render() {
     return (
-      <Router>
+      <Router basename={'tokengen'}>
         <div>
           <header className="App-header">
             <h4>TOKENGEN</h4>

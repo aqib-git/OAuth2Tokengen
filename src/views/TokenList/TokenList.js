@@ -49,7 +49,9 @@ class TokenList extends Component {
     accessTokenErrMsg: '',
     identityServerUrl: '',
     refreshingToken: false,
-    revokingToken: false
+    revokingToken: false,
+    revokeSuccessMsg: '',
+    refreshSuccessMsg: ''
   };
 
   componentDidMount() {
@@ -137,7 +139,8 @@ class TokenList extends Component {
     })
     .then((response) => {
       this.setState({
-        refreshingToken: false
+        refreshingToken: false,
+        refreshSuccessMsg: 'Access token refresh successfully.'
       })
       token.timestamp = (new Date()).getTime()
       token.data.access_token = response.data.access_token
@@ -160,7 +163,9 @@ class TokenList extends Component {
 
   handleCloseSnackbar = () => {
     this.setState({
-      accessTokenErrMsg: ''
+      accessTokenErrMsg: '',
+      refreshSuccessMsg: '',
+      revokeSuccessMsg: ''
     })
   }
 
@@ -204,7 +209,8 @@ class TokenList extends Component {
       token.access_token_revoked = true
       this.setState({
         revokingToken: false,
-        tokens: tokens
+        tokens: tokens,
+        revokeSuccessMsg: 'Access token revoked successfully.'
       })
       localStorage.setItem('tokens', JSON.stringify(tokens.reverse()))
     })
@@ -227,11 +233,37 @@ class TokenList extends Component {
             horizontal: 'center',
           }}
           open={this.state.accessTokenErrMsg.length > 0}
-          onClose={() => this.handleCloseSnackbar()}
+          onClick={() => this.handleCloseSnackbar()}
         >
           <SnackNotification
             variant="error"
             message={ this.state.accessTokenErrMsg }
+          />
+        </Snackbar>
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'center',
+          }}
+          open={this.state.revokeSuccessMsg.length > 0}
+          onClick={() => this.handleCloseSnackbar()}
+        >
+          <SnackNotification
+            variant="success"
+            message={ this.state.revokeSuccessMsg }
+          />
+        </Snackbar>
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'center',
+          }}
+          open={this.state.refreshSuccessMsg.length > 0}
+          onClick={() => this.handleCloseSnackbar()}
+        >
+          <SnackNotification
+            variant="success"
+            message={ this.state.refreshSuccessMsg }
           />
         </Snackbar>
         <Paper>
