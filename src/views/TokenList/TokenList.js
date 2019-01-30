@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import axios from 'axios'
 
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -10,6 +11,10 @@ import { withStyles } from '@material-ui/core/styles';
 
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
+import Chip from '@material-ui/core/Chip';
+import LinearProgress from '@material-ui/core/LinearProgress';
+import Snackbar from '@material-ui/core/Snackbar';
+import SnackNotification from './../../components/SnackNotification';
 
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -18,7 +23,6 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import Slide from '@material-ui/core/Slide';
 
 import './TokenList.css'
-
 
 const CustomTableCell = withStyles(theme => ({
   head: {
@@ -39,15 +43,19 @@ class TokenList extends Component {
   state = {
     open: false,
     accessToken: '',
-    refreshToken: ''
+    refreshToken: '',
+    idToken: '',
+    tokens: [],
+    accessTokenErrMsg: '',
+    identityServerUrl: '',
+    refreshingToken: false
   };
 
-  tokens = () => {
-    let tokens = localStorage.getItem('tokens')
-    if (!tokens) {
-      return []
-    }
-    return JSON.parse(tokens).reverse()
+  componentDidMount() {
+    this.setState({
+      tokens: JSON.parse(localStorage.getItem('tokens') || '[]').reverse(),
+      identityServerUrl: localStorage.getItem('oauth2_identity_server_url')
+    })
   }
 
   timestampFormatted = (timestamp) => {
@@ -57,11 +65,10 @@ class TokenList extends Component {
   expiresAt = (createdAtTimestamp, expiresIn) => {
     let expireTimestamp = parseInt(createdAtTimestamp) + parseInt(expiresIn) * 1000
     let nowTimestamp = (new Date()).getTime()
-    let expiredString = ''
     if (nowTimestamp >= expireTimestamp) {
-      expiredString = ' (EXPIRED)'
+      return 'EXPIRED'
     }
-    return (new Date(expireTimestamp)).toLocaleString() + expiredString 
+    return (new Date(expireTimestamp)).toLocaleString()
   }
 
   handleClickOpen = () => {
@@ -72,43 +79,137 @@ class TokenList extends Component {
     this.setState({ open: false });
   };
 
-  getToken = (token) => {
+  setCurrentToken = (token) => {
     this.setState({
       accessToken: token.data.access_token,
-      refreshToken: token.data.refresh_token
+      refreshToken: token.data.refresh_token,
+      idToken: token.data.id_token
     })
     this.handleClickOpen()
+  }
+
+  deleteToken = (index) => {
+    let tokens = [...this.state.tokens]
+    tokens.splice(index, 1)
+    this.setState({
+      tokens: tokens
+    })
+    localStorage.setItem('tokens', JSON.stringify(tokens.reverse()))
+  }
+
+  refreshAccessToken(index) {
+    let tokens = [...this.state.tokens]
+    let token = tokens[index]
+    
+    let clientId = localStorage.getItem('oauth2_ssa_client_id') || ''
+    let clientSecret = localStorage.getItem('oauth2_ssa_client_secret') || ''
+
+    if (token.type === 'single_page') {
+      clientId = localStorage.getItem('oauth2_spa_client_id')
+      clientSecret = localStorage.getItem('oauth2_spa_client_secret')
+    }
+
+    if (!clientId || !clientSecret) {
+      this.setState({
+        accessTokenErrMsg: 'unable to refresh token because client id and client secret is empty.'
+      })
+      return
+    }
+
+    this.setState({
+      refreshingToken: true
+    })
+    let params = new URLSearchParams();
+    params.append('grant_type', 'refresh_token')
+    params.append('refresh_token', token.data.refresh_token)
+    params.append('client_id', clientId + 'a')
+    params.append('client_secret', clientSecret)
+    axios.post(this.state.identityServerUrl + '/connect/token', params, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    })
+    .then((response) => {
+      this.setState({
+        refreshingToken: false
+      })
+      token.timestamp = (new Date()).getTime()
+      token.data.access_token = response.data.access_token
+      token.data.refresh_token = response.data.refresh_token
+      if (response.data.id_token) {
+        token.data.id_token = response.data.id_token
+      }
+      this.setState({
+        tokens: tokens
+      })
+      localStorage.setItem('tokens', JSON.stringify(tokens.reverse()))
+    })
+    .catch((error) => {
+      this.setState({
+        refreshingToken: false,
+        accessTokenErrMsg: error.response.data.error
+      })
+    });
+  }
+
+  handleCloseSnackbar = () => {
+    this.setState({
+      accessTokenErrMsg: ''
+    })
   }
 
   render() {
     return (
       <div className="container">
+        {this.state.refreshingToken && <div><p style={{ textAlign: 'center' }}>Refreshing Token...</p> <LinearProgress /></div>}
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'center',
+          }}
+          open={this.state.accessTokenErrMsg.length > 0}
+          onClose={() => this.handleCloseSnackbar()}
+        >
+          <SnackNotification
+            variant="error"
+            message={ this.state.accessTokenErrMsg }
+          />
+        </Snackbar>
         <Paper>
           <Table>
             <TableHead>
               <TableRow>
                 <CustomTableCell>#</CustomTableCell>
-                <CustomTableCell align="right">Type</CustomTableCell>
-                <CustomTableCell align="right">Generated At</CustomTableCell>
-                <CustomTableCell align="right">Expires At</CustomTableCell>
-                <CustomTableCell align="right">Token</CustomTableCell>
+                <CustomTableCell>Type</CustomTableCell>
+                <CustomTableCell>Generated At</CustomTableCell>
+                <CustomTableCell>Expires At</CustomTableCell>
+                <CustomTableCell>Token</CustomTableCell>
+                <CustomTableCell>Actions</CustomTableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {this.tokens().map((token, index) => (
+              {this.state.tokens.map((token, index) => (
                 <TableRow key={index + 1}>
                   <CustomTableCell component="th" scope="row">
                     {index + 1}
                   </CustomTableCell>
                   <CustomTableCell component="th" scope="row">
-                    {token.type}
+                    <Chip label={token.type} color={token.type === 'single_page' ? 'primary' : 'secondary'}/>
                   </CustomTableCell>
-                  <CustomTableCell align="right">{ this.timestampFormatted(token.timestamp) }</CustomTableCell>
-                  <CustomTableCell align="right">{ this.expiresAt(token.timestamp, token.data.expires_in) }</CustomTableCell>
-                  <CustomTableCell align="right">
-                    <Button size="small" variant="contained" onClick={() => this.getToken(token)}>
+                  <CustomTableCell>{ this.timestampFormatted(token.timestamp) }</CustomTableCell>
+                  <CustomTableCell>{ this.expiresAt(token.timestamp, token.data.expires_in) }</CustomTableCell>
+                  <CustomTableCell>
+                    <Button size="small" variant="contained" onClick={() => this.setCurrentToken(token)}>
                       VIEW
                     </Button>
+                  </CustomTableCell>
+                  <CustomTableCell>
+                    <Button title="delete" size="small" variant="contained" color="secondary" onClick={() => this.deleteToken(index)}>
+                      Trash
+                    </Button> &nbsp;&nbsp;
+                    {token.data.refresh_token && <Button disabled={this.state.refreshingToken} title="delete" size="small" variant="contained" onClick={() => this.refreshAccessToken(index)}>
+                      Refresh Access Token
+                    </Button>}
                   </CustomTableCell>
                 </TableRow>
               ))}
@@ -139,6 +240,17 @@ class TokenList extends Component {
               type="text"
             />
           </div>
+          { this.state.idToken &&
+          <div className="token-field">
+            <TextField
+              multiline={ true }
+              label="ID Token"
+              value={this.state.idToken}
+              margin="normal"
+              variant="outlined"
+              type="text"
+            />
+          </div>}
           { this.state.refreshToken &&
           <div className="token-field">
             <TextField

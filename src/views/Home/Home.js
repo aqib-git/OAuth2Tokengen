@@ -82,8 +82,7 @@ class Home extends Component {
       if (this.state.appType === 'single_page') {
         this.removeScope('offline_access')
         credentials = {
-          clientId: localStorage.getItem('oauth2_spa_client_id') || '',
-          clientSecret: localStorage.getItem('oauth2_spa_client_secret') || ''
+          clientId: localStorage.getItem('oauth2_spa_client_id') || ''
         }
       }
       this.setState(credentials)
@@ -124,7 +123,9 @@ class Home extends Component {
     params.append('grant_type', this.appType().grant_type)
     params.append('redirect_uri', this.state.redirectUrl)
     params.append('client_id', this.state.clientId)
-    params.append('client_secret', this.state.clientSecret)
+    if (this.state.appType === 'server_side') {
+      params.append('client_secret', this.state.clientSecret)
+    }
     axios.post(this.state.identityServerUrl + '/connect/token', params, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -208,16 +209,15 @@ class Home extends Component {
   }
 
   saveCredentials = () => {
-    localStorage.setItem('oauth2_identity_server_url', this.state.identityServerUrl);
-    localStorage.setItem('oauth2_redirect_uri', this.state.redirectUrl);
+    localStorage.setItem('oauth2_identity_server_url', this.state.identityServerUrl)
+    localStorage.setItem('oauth2_redirect_uri', this.state.redirectUrl)
     if (this.state.appType === 'server_side') {
-      localStorage.setItem('oauth2_ssa_client_id', this.state.clientId);
-      localStorage.setItem('oauth2_ssa_client_secret', this.state.clientSecret);
+      localStorage.setItem('oauth2_ssa_client_id', this.state.clientId)
+      localStorage.setItem('oauth2_ssa_client_secret', this.state.clientSecret)
     } else {
-      localStorage.setItem('oauth2_spa_client_id', this.state.clientId);
-      localStorage.setItem('oauth2_spa_client_secret', this.state.clientSecret);
+      localStorage.setItem('oauth2_spa_client_id', this.state.clientId)
     }
-    localStorage.setItem('oauth2_scopes', this.state.scopes);
+    localStorage.setItem('oauth2_scopes', this.state.scopes)
     localStorage.setItem('oauth2_app_type', this.state.appType)
   }
 
@@ -234,7 +234,6 @@ class Home extends Component {
       credentials.clientSecret = localStorage.getItem('oauth2_ssa_client_secret') || ''
     } else {
       credentials.clientId = localStorage.getItem('oauth2_spa_client_id') || ''
-      credentials.clientSecret = localStorage.getItem('oauth2_spa_client_secret') || ''
     }
     this.setState(credentials)
   }
@@ -325,6 +324,7 @@ class Home extends Component {
                 type="text"
               />
             </div>
+            { this.state.appType === 'server_side' &&
             <div>
               <TextField
                 id="client-secret"
@@ -335,7 +335,7 @@ class Home extends Component {
                 variant="outlined"
                 type="text"
               />
-            </div>
+            </div>}
             <div>
               <div className="scopes-input">
                 <TextField
